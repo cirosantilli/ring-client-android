@@ -75,6 +75,7 @@ JNIEXPORT void JNICALL Java_cx_ring_service_RingserviceJNI_setNativeWindowGeomet
 
 void AndroidDisplayCb(ANativeWindow *window, std::unique_ptr<DRing::FrameBuffer> frame)
 {
+    __android_log_write(ANDROID_LOG_ERROR, "com.cirosantilli", "asdf");
     ANativeWindow_Buffer buffer;
     if (ANativeWindow_lock(window, &buffer, NULL) == 0) {
         memcpy(buffer.bits, frame->storage.data(), frame->width * frame->height * 4);
@@ -101,6 +102,17 @@ JNIEXPORT void JNICALL Java_cx_ring_service_RingserviceJNI_registerVideoCallback
 
     ANativeWindow *nativeWindow = (ANativeWindow*)((intptr_t) window);
     auto f_display_cb = std::bind(&AndroidDisplayCb, nativeWindow, std::placeholders::_1);
+
+
+    ANativeWindow_Buffer buffer;
+    if (ANativeWindow_lock(nativeWindow, &buffer, NULL) == 0) {
+#define NBYTES 100000
+        uint8_t bytes[NBYTES];
+        for (int i = 0; i < NBYTES; i++)
+            bytes[i] = 0xFF;
+        memcpy(buffer.bits, bytes, NBYTES);
+        ANativeWindow_unlockAndPost(nativeWindow);
+    }
 
     DRing::registerSinkTarget((std::string const &)*arg1, DRing::SinkTarget {.pull=nullptr, .push=f_display_cb});
 }
